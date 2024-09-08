@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+    
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23.1'
+
+    - name: Install dependencies
+      run: go get .
+    
+    - name: Build
+      run: go build -ldflags="-w -s"
+
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: artwork-uploader.exe
+        path: artwork-uploader.exe
