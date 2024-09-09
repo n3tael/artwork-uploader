@@ -1,15 +1,15 @@
 package main
 
 import (
-	"os"
-	"io"
-	"fmt"
-	"flag"
-	"bytes"
 	"bufio"
-	"net/http"
+	"bytes"
 	"encoding/json"
-	
+	"flag"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+
 	"github.com/disintegration/imaging"
 )
 
@@ -31,7 +31,7 @@ func main() {
 		flag.Usage()
 		os.Exit(2)
 	}
-	
+
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
 	if scanner.Err() != nil {
@@ -39,7 +39,7 @@ func main() {
 		os.Exit(2)
 	}
 	imagePath := scanner.Text()
-	
+
 	image, err := processImage(imagePath, *resizeImage)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to process image: %v", err)
@@ -51,18 +51,18 @@ func main() {
 		fmt.Fprintf(os.Stderr, "failed to upload image: %v", err)
 		os.Exit(1)
 	}
-	
+
 	fmt.Println(link)
 }
 
 func processImage(imagePath string, resizeImage bool) (bytes.Buffer, error) {
 	var image bytes.Buffer
-	
+
 	fileBytes, err := os.ReadFile(imagePath)
 	if err != nil {
 		return bytes.Buffer{}, err
 	}
-	
+
 	image.Write(fileBytes)
 
 	if resizeImage == true {
@@ -70,47 +70,47 @@ func processImage(imagePath string, resizeImage bool) (bytes.Buffer, error) {
 		if err != nil {
 			return bytes.Buffer{}, err
 		}
-		
+
 		resizedImage := imaging.Resize(decodedImage, 200, 0, imaging.Lanczos)
-		
+
 		if err := imaging.Encode(&image, resizedImage, 1); err != nil {
 			return bytes.Buffer{}, err
 		}
 	}
-	
+
 	return image, nil
 }
 
 func upload(file bytes.Buffer, key string) (string, error) {
 	client := &http.Client{}
-	
+
 	req, err := http.NewRequest("POST", uploadServer, &file)
 	if err != nil {
 		return "", err
 	}
-	
-	req.Header.Set("Authorization", "Client-ID " + key)
-	
+
+	req.Header.Set("Authorization", "Client-ID "+key)
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
-	
-    contentBytes, err := io.ReadAll(resp.Body)
+
+	contentBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
-    content := string(contentBytes)
-	
+	content := string(contentBytes)
+
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("server responded not OK: %v", content)
 	}
-	
+
 	successResponse := SuccessResponse{}
 	if err := json.Unmarshal([]byte(content), &successResponse); err != nil {
 		return "", err
 	}
-	
+
 	return successResponse.Data.Link, nil
 }
