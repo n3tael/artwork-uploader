@@ -1,4 +1,4 @@
-module artwork-uploader
+module github.com/n3tael/artwork-uploader
 
 go 1.23.1
 
