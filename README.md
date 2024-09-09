@@ -5,7 +5,7 @@ Utility to upload cover arts on Imgur, designed for [Discord Rich Presence Integ
 ## Features
 
 * **Easy to use**, just follow instructions bellow.
-* **Automatically resizes artwork to 200x200**. And Imgur will not be say «the image is too big!!!».
+* **Automatically resizes artwork to 200x200**. And Imgur will be not say «the image is too big!!».
 * **No installation required.** Just download and remember path where you placed it.
 
 ## How to use?
@@ -17,10 +17,18 @@ Before you can use the program, you will need to create an API key on Imgur, you
 3. In `Art uploader` section, check `Upload and display art`. Enter the full path that you remembered in `Upload Command`, and add the argument `--key <enter key>`, where `<enter key>` is your API key to Imgur. So, your upload command should looks like this: `F:\Programs\artwork-uploader.exe --key 00beefcafe12345`.
 4. Enjoy!
 
+## Arguments
+```
+  -key string
+        Imgur API key
+  -resize
+        Resize the image to 200px wide (default true)
+```
+
+## Notes
+
+This is my first Go project. I will be very grateful, if you suggest your improvements in Pull Requests, report bugs or propose an ideas in Issues.
+
 ## License
 
 Apache-2.0 license
-
-### Notes
-
-This is my first Go project. I will be very grateful, if you suggest your improvements in Pull Requests, report bugs or propose an ideas in Issues.

@@ -13,7 +13,10 @@ import (
 	"github.com/disintegration/imaging"
 )
 
-var upload_server string = "https://api.imgur.com/3/image"
+const (
+	uploadServer string = "https://api.imgur.com/3/image"
+)
+
 type SuccessResponse struct {
 	Data struct {
 		Link string `json:"link"`
@@ -21,9 +24,10 @@ type SuccessResponse struct {
 }
 
 func main() {
-	var apikey = flag.String("key", "", "Imgur API key")
+	var key = flag.String("key", "", "Imgur API key")
+	var resizeImage = flag.Bool("resize", true, "Resize the image to 200px wide")
 	flag.Parse()
-	if *apikey == "" {
+	if *key == "" {
 		flag.Usage()
 		os.Exit(2)
 	}
@@ -34,15 +38,15 @@ func main() {
 		fmt.Fprintf(os.Stderr, "failed to get path from stdin: %v", scanner.Err())
 		os.Exit(2)
 	}
-	image_path := scanner.Text()
+	imagePath := scanner.Text()
 	
-	image, err := process_image(image_path)
+	image, err := processImage(imagePath, *resizeImage)
 	if err != nil {
-	    fmt.Fprintf(os.Stderr, "failed to process image: %v", err)
+		fmt.Fprintf(os.Stderr, "failed to process image: %v", err)
 		os.Exit(1)
 	}
-	
-	link, err := upload(image, *apikey)
+
+	link, err := upload(image, *key)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to upload image: %v", err)
 		os.Exit(1)
@@ -51,32 +55,41 @@ func main() {
 	fmt.Println(link)
 }
 
-func process_image(image_path string) (bytes.Buffer, error) {
-	var encoded_image bytes.Buffer
+func processImage(imagePath string, resizeImage bool) (bytes.Buffer, error) {
+	var image bytes.Buffer
 	
-	image, err := imaging.Open(image_path)
+	fileBytes, err := os.ReadFile(imagePath)
 	if err != nil {
 		return bytes.Buffer{}, err
 	}
 	
-	resized_image := imaging.Resize(image, 200, 0, imaging.Lanczos)
-	
-	if err := imaging.Encode(&encoded_image, resized_image, 1); err != nil {
-		return bytes.Buffer{}, err
+	image.Write(fileBytes)
+
+	if resizeImage == true {
+		decodedImage, err := imaging.Decode(&image)
+		if err != nil {
+			return bytes.Buffer{}, err
+		}
+		
+		resizedImage := imaging.Resize(decodedImage, 200, 0, imaging.Lanczos)
+		
+		if err := imaging.Encode(&image, resizedImage, 1); err != nil {
+			return bytes.Buffer{}, err
+		}
 	}
 	
-	return encoded_image, nil
+	return image, nil
 }
 
 func upload(file bytes.Buffer, key string) (string, error) {
 	client := &http.Client{}
 	
-	req, err := http.NewRequest("POST", upload_server, &file)
+	req, err := http.NewRequest("POST", uploadServer, &file)
 	if err != nil {
 		return "", err
 	}
 	
-	req.SetBasicAuth("Client-ID", key)
+	req.Header.Set("Authorization", "Client-ID " + key)
 	
 	resp, err := client.Do(req)
 	if err != nil {
@@ -94,10 +107,10 @@ func upload(file bytes.Buffer, key string) (string, error) {
 		return "", fmt.Errorf("server responded not OK: %v", content)
 	}
 	
-	success_response := SuccessResponse{}
-	if err := json.Unmarshal([]byte(content), &success_response); err != nil {
+	successResponse := SuccessResponse{}
+	if err := json.Unmarshal([]byte(content), &successResponse); err != nil {
 		return "", err
 	}
 	
-	return success_response.Data.Link, nil
+	return successResponse.Data.Link, nil
 }
